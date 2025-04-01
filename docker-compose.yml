@@ -6,6 +6,7 @@ services:
       - .:/app
     ports:
       - 5555:8000 
+      - 5556:5000 
     env_file:
       - .env
     networks:

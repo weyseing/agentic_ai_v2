@@ -25,49 +25,49 @@
             font-size: 2.5em;
             font-weight: bold;
             border-bottom: 3px solid #ddd;
-            padding-top: 10px;
-            padding-bottom: 10px;
+            padding-top: 16px;
+            padding-bottom: 12px
         }
 
         #output h2 {
             font-size: 2em;
             font-weight: bold;
             border-bottom: 2px solid #ddd;
-            padding-top: 8px;
-            padding-bottom: 8px;
+            padding-top: 14px; 
+            padding-bottom: 10px;
         }
 
         #output h3 {
             font-size: 1.75em;
             font-weight: bold;
-            padding-top: 6px;
-            padding-bottom: 6px;
+            padding-top: 12px;
+            padding-bottom: 8px;
         }
 
         #output h4 {
             font-size: 1.5em;
             font-weight: bold;
-            padding-top: 5px;
-            padding-bottom: 5px;
+            padding-top: 10px;
+            padding-bottom: 8px;
         }
 
         #output h5 {
             font-size: 1.25em;
             font-weight: bold;
-            padding-top: 4px;
-            padding-bottom: 4px;
+            padding-top: 8px;
+            padding-bottom: 6px; 
         }
 
         #output h6 {
             font-size: 1em;
             font-weight: bold;
-            padding-top: 3px;
-            padding-bottom: 3px;
+            padding-top: 6px;
+            padding-bottom: 6px;
         }
 
         p {
-            padding-top: 3px;
-            padding-bottom: 3px;
+            padding-top: 8px;
+            padding-bottom: 8px;
         }
 
         /* table */
@@ -151,7 +151,7 @@
             const userInput = document.getElementById("inputBox").value;
             document.getElementById("output").innerHTML = "Loading...";
 
-            fetch(`${window.location.origin}/agent_sdk/chat/`, {
+            fetch(`${window.location.origin}/agent_sdk/agent_sdk/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: userInput })
