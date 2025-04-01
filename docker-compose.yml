@@ -1,0 +1,19 @@
+services:
+  agentic_ai:
+    container_name: agentic_ai
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - 5555:8000 
+    env_file:
+      - .env
+    networks:
+      aws_molpay:
+      aliyun_molpay:
+
+networks:
+  aws_molpay:
+    external: true
+  aliyun_molpay:
+    external: true

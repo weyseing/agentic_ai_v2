@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+
+<html>
+  <input
+    type="text"
+    id="user-input"
+    value="Translate Hi to japanese"
+  />
+  <br>
+  <button id="send-button">Send</button>
+  <div id="response-container">
+    <p>Response:</p>
+    <div id="streamed-content"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    // element
+    const sendButton = document.getElementById("send-button");
+    const userInput = document.getElementById("user-input");
+    const streamedContentDiv = document.getElementById("streamed-content");
+
+    // send btn
+    sendButton.addEventListener("click", () => {
+      const message = userInput.value;
+      streamedContentDiv.textContent = "";
+      url = "/oai/chat_langchain/"
+
+      fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userInput.value }),
+        })
+        .then(async (response) => {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    console.log("Stream finished.");
+                    break;
+                }
+                console.log ("DONE: ", done, "VALUE: ", value);
+                continue;
+                let chunk = decoder.decode(value, { stream: true });
+                chunk = chunk.split("data: ")[1]
+                chunk = JSON.parse(chunk);
+
+                console.log("Chunk received:", chunk);
+                streamedContentDiv.textContent += chunk.content;
+            }
+        })
+        .catch((error) => console.error("Fetch error:", error));
+    });
+  </script>
+</html>
