@@ -64,6 +64,72 @@
             padding-top: 3px;
             padding-bottom: 3px;
         }
+
+        p {
+            padding-top: 3px;
+            padding-bottom: 3px;
+        }
+
+        /* table */
+        table {
+            border-collapse: separate !important;
+            width: 100%;
+            margin: 25px 0;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
+            border-spacing: 0;
+            border: 1px solid black;
+            border-radius: 8px;
+        }
+        th:first-child {
+            border-top-left-radius: 8px;
+        }
+        th:last-child {
+            border-top-right-radius: 8px;
+        }
+        tr:last-child td:first-child {
+            border-bottom-left-radius: 8px;
+        }
+        tr:last-child td:last-child {
+            border-bottom-right-radius: 8px;
+        }
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+        }
+        th {
+            background-color: #060d1d;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        td {
+            color: #4b5563;
+            font-weight: 400;
+        }
+        tr {
+            background-color: white;
+            transition: background-color 0.2s ease;
+            position: relative;
+        }
+        tr:hover {
+            background-color: #f2f4f8;
+        }
+        tr::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20px; 
+            right: 20px;
+            height: 1px;
+            background-color: #e5e7eb;
+        }
+        tr:last-child::after {
+            display: none;
+        }
+
+
     </style>
 </head>
 
@@ -108,7 +174,7 @@
         }
 
         document.getElementById('inputBox').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !event.shiftKey) { 
                 event.preventDefault();
                 sendData(); 
             }

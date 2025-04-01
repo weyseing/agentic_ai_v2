@@ -49,10 +49,21 @@ def chat(request):
     # result = response.output_text
 
     # tools (web search)
+    # response = client.responses.create(
+    #     model = "gpt-4o",
+    #     tools = [{"type": "web_search_preview"}],
+    #     input = data.get("message"),
+    # )
+    # result = response.output_text
+
+    # tools (file search)
     response = client.responses.create(
         model = "gpt-4o",
-        tools = [{"type": "web_search_preview"}],
         input = data.get("message"),
+        tools = [{
+            "type": "file_search",
+            "vector_store_ids": [os.environ["OAI_VECTOR_DEV_V1"]]
+        }]
     )
     result = response.output_text
 
