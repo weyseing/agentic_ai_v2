@@ -19,7 +19,6 @@ def chat(request):
 
     # payload
     data = json.loads(request.body)
-    message = data.get("message", "") 
 
     # OAI key
     openai_key = os.environ["OAI_KEY"]
@@ -53,7 +52,7 @@ def chat(request):
     response = client.responses.create(
         model = "gpt-4o",
         tools = [{"type": "web_search_preview"}],
-        input = message,
+        input = data.get("message"),
     )
     result = response.output_text
 

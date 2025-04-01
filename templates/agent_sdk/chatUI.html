@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Dev</title>
+    <title>ChatAgent Dev</title>
 
     <style>
         pre {
@@ -20,12 +20,56 @@
             background: #ffffff !important; 
             color: #24292e !important; 
         }
+
+        #output h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            border-bottom: 3px solid #ddd;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        #output h2 {
+            font-size: 2em;
+            font-weight: bold;
+            border-bottom: 2px solid #ddd;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
+        #output h3 {
+            font-size: 1.75em;
+            font-weight: bold;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+
+        #output h4 {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        #output h5 {
+            font-size: 1.25em;
+            font-weight: bold;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+
+        #output h6 {
+            font-size: 1em;
+            font-weight: bold;
+            padding-top: 3px;
+            padding-bottom: 3px;
+        }
     </style>
 </head>
 
 <body>
     <div class="p-10">
-        <h1 class="text-4xl font-bold text-center text-blue-800 mt-6 mb-4">Chat Dev</h1>        
+        <h1 class="text-4xl font-bold text-center text-blue-800 mt-6 mb-4">ChatAgent Dev</h1>        
         <textarea id="inputBox" placeholder="Enter text here..." 
             class="w-full h-48 p-3 text-lg border border-gray-300 rounded-md resize-y"></textarea><br><br>
         <div id="output"></div>
