@@ -5,10 +5,12 @@ import asyncio
 from openai import OpenAI
 from django.shortcuts import render
 from asgiref.sync import async_to_sync
+from django.http import StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from openai.types.responses import ResponseTextDeltaEvent
+from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner
 from django.http import HttpResponse, StreamingHttpResponse, JsonResponse
 
-from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner
 
 def ui(request):
     return render(request, 'agent_sdk/chatUI.html')
@@ -83,8 +85,8 @@ def response_api(request):
 
     return HttpResponse(result, content_type="text/markdown")
 
-@csrf_exempt
-def agent_sdk(request):
+# @csrf_exempt
+async def agent_sdk(request):
     # payload
     data = json.loads(request.body)
 
@@ -98,10 +100,37 @@ def agent_sdk(request):
         instructions= "You provide assistance with historical queries. Explain important events and context clearly."
     )
 
-    async def _async_task():
-        result = await Runner.run(agent, data.get("message"))
-        return result
-    response = async_to_sync(_async_task)()
+    # async def _async_task():
+    #     result = await Runner.run(agent, data.get("message"))
+    #     return result
+    response = await Runner.run(agent, data.get("message"))
     result = response.final_output
 
     return HttpResponse(result, content_type="text/markdown") 
+
+# @csrf_exempt
+async def agent_sdk_stream(request):
+    # payload
+    data = json.loads(request.body)
+
+    # OAI key
+    os.environ["OPENAI_API_KEY"] = os.environ["OAI_KEY"]
+
+    # agent
+    agent = Agent(
+        name="History Tutor",
+        handoff_description="Specialized agent for historical questions",
+        instructions="You provide assistance with historical queries. Explain important events and context clearly."
+    )
+
+    result = Runner.run_streamed(agent, input="Please tell me 5 jokes.")
+    async for event in result.stream_events():
+        if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+            print(event.data.delta, end="", flush=True)
+
+    return HttpResponse("result", content_type="text/markdown") 
+
+# @csrf_exempt
+async def async_call(request):
+    await asyncio.sleep(2) 
+    return HttpResponse("Done")

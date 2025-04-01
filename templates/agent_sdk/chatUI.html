@@ -135,7 +135,8 @@
 
 <body>
     <div class="p-10">
-        <h1 class="text-4xl font-bold text-center text-blue-800 mt-6 mb-4">ChatAgent Dev</h1>        
+        <h1 class="text-4xl font-bold text-center text-blue-800 mt-6 mb-4">ChatAgent Dev</h1> 
+        {% csrf_token %}        
         <textarea id="inputBox" placeholder="Enter text here..." 
             class="w-full h-48 p-3 text-lg border border-gray-300 rounded-md resize-y"></textarea><br><br>
         <div id="output"></div>
@@ -151,9 +152,12 @@
             const userInput = document.getElementById("inputBox").value;
             document.getElementById("output").innerHTML = "Loading...";
 
-            fetch(`${window.location.origin}/agent_sdk/agent_sdk/`, {
+            fetch(`${window.location.origin}/agent_sdk/agent_sdk_stream/`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value  
+                },
                 body: JSON.stringify({ message: userInput })
             })
             .then(res => res.ok ? res.text() : Promise.reject(res.status))

@@ -2,5 +2,5 @@ Django==4.1.7
 langchain-azure-ai==0.1.1
 openai==1.70.0
 openai-agents==0.0.7
-ipython==9.0.2
 uvicorn==0.34.0
+gunicorn==21.2.0

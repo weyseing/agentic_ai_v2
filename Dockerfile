@@ -5,9 +5,10 @@ FROM python:3.11
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# apt-get update
+# install packages
 RUN apt-get update && apt-get -y install curl
 RUN python3 -m pip install --upgrade setuptools
+RUN pip install --upgrade pip
 
 # Copy all app files
 COPY . /app/
