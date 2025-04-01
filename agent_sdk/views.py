@@ -4,10 +4,15 @@ import base64
 import asyncio
 from openai import OpenAI
 from pydantic import BaseModel
+from django.shortcuts import render
 from IPython.display import Image, display
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, StreamingHttpResponse
 from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner
+
+
+def ui(request):
+    return render(request, 'agent_sdk/chatUI.html')
 
 @csrf_exempt
 def chat(request):
@@ -44,9 +49,9 @@ def chat(request):
     response = client.responses.create(
         model = "gpt-4o",
         tools = [{"type": "web_search_preview"}],
-        input = "Check latest Fiuu company blog title and content"
+        input = "What is the latest blog of Fiuu website. display blog content"
     )
     result = response.output_text
 
 
-    return HttpResponse(json.dumps({"test": str(result)}), content_type="application/json") 
+    return HttpResponse(result, content_type="text/markdown")
