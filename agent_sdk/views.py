@@ -17,6 +17,10 @@ def ui(request):
 @csrf_exempt
 def chat(request):
 
+    # payload
+    data = json.loads(request.body)
+    message = data.get("message", "") 
+
     # OAI key
     openai_key = os.environ["OAI_KEY"]
     client = OpenAI(api_key=openai_key)
@@ -49,7 +53,7 @@ def chat(request):
     response = client.responses.create(
         model = "gpt-4o",
         tools = [{"type": "web_search_preview"}],
-        input = "What is the latest blog of Fiuu website. display blog content"
+        input = message,
     )
     result = response.output_text
 
