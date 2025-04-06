@@ -1,4 +1,4 @@
-Django==4.1.7
+Django==5.2
 langchain-azure-ai==0.1.1
 openai==1.70.0
 openai-agents==0.0.7

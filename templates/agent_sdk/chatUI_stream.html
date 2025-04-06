@@ -148,33 +148,46 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 
     <script>
-        function sendData() {
+        async function sendData() {
             const userInput = document.getElementById("inputBox").value;
             document.getElementById("output").innerHTML = "Loading...";
 
-            fetch(`${window.location.origin}/agent_sdk/agent_sdk_stream/`, {
+            const response = await fetch(`${window.location.origin}/agent_sdk/agent_sdk_stream/`, {
                 method: "POST",
-                headers: { 
+                headers: {
                     "Content-Type": "application/json",
-                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value  
+                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
                 },
                 body: JSON.stringify({ message: userInput })
-            })
-            .then(res => res.ok ? res.text() : Promise.reject(res.status))
-            .then(md => {
-                const mdParser = window.markdownit({
-                    highlight: function(str, lang) {
-                        if (lang && window.hljs.getLanguage(lang)) {
-                            return window.hljs.highlight(str, { language: lang }).value;
-                        }
-                        return str; 
-                    }
-                });
+            });
 
-                const rendered = mdParser.render(md);
+            if (!response.ok) {
+                document.getElementById("output").innerHTML = "Error sending data.";
+                return;
+            }
+
+            const mdParser = window.markdownit({
+                highlight: function (str, lang) {
+                    if (lang && window.hljs.getLanguage(lang)) {
+                        return window.hljs.highlight(str, { language: lang }).value;
+                    }
+                    return str;
+                }
+            });
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break; 
+
+                const chunk = decoder.decode(value, { stream: true });
+                accumulatedText += chunk;
+                const rendered = mdParser.render(accumulatedText);
                 document.getElementById("output").innerHTML = rendered;
-            })
-            .catch(() => document.getElementById("output").innerHTML = 'Error sending data.');
+            }
         }
 
         document.getElementById('inputBox').addEventListener('keydown', function(event) {

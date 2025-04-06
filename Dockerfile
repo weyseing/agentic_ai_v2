@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # install packages
-RUN apt-get update && apt-get -y install curl
+RUN apt-get update && apt-get -y install curl nginx
 RUN python3 -m pip install --upgrade setuptools
 RUN pip install --upgrade pip
 

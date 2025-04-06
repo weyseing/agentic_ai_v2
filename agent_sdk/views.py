@@ -1,5 +1,6 @@
 import os
 import json
+import queue
 import base64
 import asyncio
 from openai import OpenAI
@@ -123,9 +124,12 @@ async def agent_sdk_stream(request):
         instructions="You provide assistance with historical queries. Explain important events and context clearly."
     )
 
-    result = Runner.run_streamed(agent, input="Please tell me 5 jokes.")
-    async for event in result.stream_events():
-        if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
-            print(event.data.delta, end="", flush=True)
+    print("streaming agent333")
 
-    return HttpResponse("result", content_type="text/markdown") 
+    result = Runner.run_streamed(agent, input=data.get("message"))
+    async def event_stream():
+        async for event in result.stream_events():
+            if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+                yield event.data.delta.encode('utf-8')
+
+    return StreamingHttpResponse(event_stream(), content_type="text/plain")
