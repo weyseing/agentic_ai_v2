@@ -106,7 +106,7 @@ async def agent_sdk(request):
 
     response = await Runner.run(agent, data.get("message"))
     result = response.final_output
-
+    
     return HttpResponse(result, content_type="text/markdown") 
 
 # @csrf_exempt
@@ -124,12 +124,10 @@ async def agent_sdk_stream(request):
         instructions="You provide assistance with historical queries. Explain important events and context clearly."
     )
 
-    print("streaming agent333")
-
     result = Runner.run_streamed(agent, input=data.get("message"))
     async def event_stream():
         async for event in result.stream_events():
             if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
-                yield event.data.delta.encode('utf-8')
+                yield event.data.delta.encode('utf-8') 
 
     return StreamingHttpResponse(event_stream(), content_type="text/plain")
