@@ -28,6 +28,10 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5557',
+    'https://admin.merchant.razer.com',
+    'https://uat-admin.merchant.razer.com',
+    'https://admin.fiuu.com',
+    'https://uat-admin.fiuu.com'
 ]
 
 # Application definition

@@ -109,7 +109,7 @@ async def agent_sdk(request):
     
     return HttpResponse(result, content_type="text/markdown") 
 
-# @csrf_exempt
+@csrf_exempt
 async def agent_sdk_stream(request):
     # payload
     data = json.loads(request.body)
