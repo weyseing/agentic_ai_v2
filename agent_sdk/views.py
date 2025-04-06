@@ -15,6 +15,9 @@ from django.http import HttpResponse, StreamingHttpResponse, JsonResponse
 def ui(request):
     return render(request, 'agent_sdk/chatUI.html')
 
+def ui_stream(request):
+    return render(request, 'agent_sdk/chatUI_stream.html')
+
 @csrf_exempt
 def response_api(request):
 
@@ -100,9 +103,6 @@ async def agent_sdk(request):
         instructions= "You provide assistance with historical queries. Explain important events and context clearly."
     )
 
-    # async def _async_task():
-    #     result = await Runner.run(agent, data.get("message"))
-    #     return result
     response = await Runner.run(agent, data.get("message"))
     result = response.final_output
 
@@ -129,8 +129,3 @@ async def agent_sdk_stream(request):
             print(event.data.delta, end="", flush=True)
 
     return HttpResponse("result", content_type="text/markdown") 
-
-# @csrf_exempt
-async def async_call(request):
-    await asyncio.sleep(2) 
-    return HttpResponse("Done")

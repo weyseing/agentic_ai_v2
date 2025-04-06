@@ -7,7 +7,7 @@ from django.http import HttpResponse, StreamingHttpResponse
 from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
 
 def ui(request):
-    return render(request, 'chatbot_deepseek.html')
+    return render(request, 'deepseek/chatUI.html')
 
 @csrf_exempt
 def chat(request):
@@ -19,15 +19,6 @@ def chat(request):
     msg = payload.get('message')
     messages = [HumanMessage(content=msg)]
 
-    # o1-mini
-    # model = AzureChatOpenAI(
-    #     azure_endpoint=os.getenv('O1_MINI_ENDPOINT'),
-    #     openai_api_key=os.getenv('O1_MINI_KEY'),
-    #     azure_deployment="o1-mini-v1",
-    #     api_version="2024-08-01-preview"
-    # )
-    # full_response = model.invoke(messages)
-
     # deepseek
     model = AzureAIChatCompletionsModel(
         endpoint=os.getenv('DEEPSEEK_ENDPOINT'),
@@ -35,7 +26,7 @@ def chat(request):
         model_name="DeepSeek-R1",
         temperature=0.1,
         top_p=0.5,
-        # max_tokens=10,
+        max_tokens=5000,
     )
 
     def event_stream():

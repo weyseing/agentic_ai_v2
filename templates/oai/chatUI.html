@@ -41,8 +41,6 @@
                     console.log("Stream finished.");
                     break;
                 }
-                console.log ("DONE: ", done, "VALUE: ", value);
-                continue;
                 let chunk = decoder.decode(value, { stream: true });
                 chunk = chunk.split("data: ")[1]
                 chunk = JSON.parse(chunk);

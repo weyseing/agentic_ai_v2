@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, StreamingHttpResponse
 
 def ui(request):
-    return render(request, 'chatbot_oai.html')
+    return render(request, 'oai/chatUI.html')
 
 def event_stream(llm, messages):
     full_content = ''

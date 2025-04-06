@@ -40,14 +40,11 @@
                     break;
                 }
                 let chunk = decoder.decode(value, { stream: true });
-                console.log("1:" + chunk);
-                chunk = chunk.replace("data: ", "");
-                console.log("2:" + chunk);
+                chunk = chunk.split("data: ")[1]
                 chunk = JSON.parse(chunk);
-                console.log("3:" + chunk);
-                continue;
-                console.log("Chunk received:", data.content);
-                streamedContentDiv.textContent += data.content;
+
+                console.log("Chunk received:", chunk);
+                streamedContentDiv.textContent += chunk.content;
             }
         })
         .catch((error) => console.error("Fetch error:", error));
