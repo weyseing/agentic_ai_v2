@@ -8,6 +8,7 @@ import logging
 import tempfile
 import subprocess
 from openai import OpenAI
+from pydantic import BaseModel
 import matplotlib.pyplot as plt
 from django.conf import settings
 from django.shortcuts import render
@@ -16,7 +17,7 @@ from django.http import StreamingHttpResponse
 from django.core.management import call_command
 from django.views.decorators.csrf import csrf_exempt
 from openai.types.responses import ResponseTextDeltaEvent
-from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner, WebSearchTool, function_tool
+from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner, WebSearchTool, function_tool, InputGuardrailTripwireTriggered, RunContextWrapper, TResponseInputItem, input_guardrail, output_guardrail
 from django.http import HttpResponse, StreamingHttpResponse, JsonResponse
 
 # logging
@@ -177,6 +178,72 @@ async def agent_sdk_stream(request):
     )
     
     result = Runner.run_streamed(triage_agent, input=data.get("message"))
+    async def event_stream():
+        async for event in result.stream_events():
+            if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+                yield event.data.delta.encode('utf-8') 
+
+    return StreamingHttpResponse(event_stream(), content_type="text/plain")
+
+
+@csrf_exempt
+async def guardrail(request):
+    # reference: https://openai.github.io/openai-agents-python/guardrails/
+
+    # payload
+    data = json.loads(request.body)
+
+    # OAI key
+    os.environ["OPENAI_API_KEY"] = os.environ["OAI_KEY"]
+
+    # input guardrail
+    class DataAnlyticsInput(BaseModel):
+        is_data_analytics: bool
+        reasoning: str
+
+    guardrail_agent = Agent(
+        name = "Guardrail Check",
+        instructions = "Check if the user is asking about data analytics.",
+        output_type= DataAnlyticsInput
+    )
+
+    @input_guardrail
+    async def data_analytics_guardrail(ctx: RunContextWrapper[None], agent: Agent, input: str | list[TResponseInputItem]) -> GuardrailFunctionOutput:
+        result = await Runner.run(guardrail_agent, input, context=ctx.context)
+        return GuardrailFunctionOutput(
+            output_info=result.final_output, 
+            tripwire_triggered=result.final_output.is_data_analytics,
+        )
+    
+    # 1st agent
+    agent_tech = Agent(
+        name="Tech Lead",
+        handoff_description="Specialized agent for solve technical questions",
+        instructions="You provide assistance with technical queries. Explain step by step in detailed. You seach online web for references.",
+        tools=[WebSearchTool()], 
+    )
+
+    # 2nd agent
+    agent_data_science = Agent(
+        name = "Data Science",
+        handoff_description= "Specialist agent for data science instrucitons",
+        instructions="Use the python_execution tool for visualizations. Explain code step-by-step and include generated images.",
+        tools=[data_visualization_tool],
+    )
+
+    # triage agent
+    triage_agent = Agent(
+        name = "Triage Agent",
+        instructions="Handoff to the appropriate agent based on the nature of the request",
+        handoffs=[agent_tech, agent_data_science],
+        input_guardrails=[data_analytics_guardrail],
+    )
+
+    try:
+        result = Runner.run_streamed(triage_agent, input=data.get("message"))
+    except InputGuardrailTripwireTriggered:
+        return JsonResponse({"status":"error", "error_msg": "Guardrail tripped: Data analytics request detected"}, status=403)
+    
     async def event_stream():
         async for event in result.stream_events():
             if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):

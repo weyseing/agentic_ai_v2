@@ -152,7 +152,7 @@
             const userInput = document.getElementById("inputBox").value;
             document.getElementById("output").innerHTML = "Loading...";
 
-            const response = await fetch(`${window.location.origin}/agent_sdk/agent_sdk_stream/`, {
+            const response = await fetch(`${window.location.origin}/agent_sdk/guardrail`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -162,7 +162,12 @@
             });
 
             if (!response.ok) {
-                document.getElementById("output").innerHTML = "Error sending data.";
+                if (response.status === 403) { 
+                    const errorData = await response.json();
+                    document.getElementById("output").innerHTML = `<div class="error">${errorData.error_msg}</div>`;
+                } else {
+                    document.getElementById("output").innerHTML = "Error sending data.";
+                }
                 return;
             }
 
