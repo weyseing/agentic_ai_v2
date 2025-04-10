@@ -152,6 +152,7 @@
             const userInput = document.getElementById("inputBox").value;
             document.getElementById("output").innerHTML = "Loading...";
 
+            // API call
             const response = await fetch(`${window.location.origin}/agent_sdk/guardrail`, {
                 method: "POST",
                 headers: {
@@ -161,34 +162,41 @@
                 body: JSON.stringify({ message: userInput })
             });
 
+            // bad response
             if (!response.ok) {
-                if (response.status === 403) { 
-                    const errorData = await response.json();
-                    document.getElementById("output").innerHTML = `<div class="error">${errorData.error_msg}</div>`;
-                } else {
-                    document.getElementById("output").innerHTML = "Error sending data.";
-                }
+                document.getElementById("output").innerHTML = "Error sending data.";
                 return;
             }
 
+            // mdarkdown parser
             const mdParser = window.markdownit({
                 highlight: function (str, lang) {
-                    if (lang && window.hljs.getLanguage(lang)) {
+                    if (lang && window.hljs.getLanguage(lang)) 
                         return window.hljs.highlight(str, { language: lang }).value;
-                    }
                     return str;
                 }
             });
 
+            // reader, decoder
             const reader = response.body.getReader();
-            const decoder = new TextDecoder();
+            const decoder = new TextDecoder('utf-8');
             let accumulatedText = "";
 
+            // looping stream
             while (true) {
                 const { done, value } = await reader.read();
+                const chunk = decoder.decode(value, { stream: true });
                 if (done) break; 
 
-                const chunk = decoder.decode(value, { stream: true });
+                // error handling
+                if (chunk.includes("ERROR_START") && chunk.includes("ERROR_END")) {
+                    let json_response = chunk.split("ERROR_START")[1].split("ERROR_END")[0];
+                    json_response = JSON.parse(json_response);
+                    document.getElementById("output").innerHTML = json_response.error_msg;
+                    return;
+                }
+
+                // append response
                 accumulatedText += chunk;
                 const rendered = mdParser.render(accumulatedText);
                 document.getElementById("output").innerHTML = rendered;

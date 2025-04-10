@@ -196,14 +196,15 @@ async def guardrail(request):
     # OAI key
     os.environ["OPENAI_API_KEY"] = os.environ["OAI_KEY"]
 
-    # input guardrail
+    # === input guardrail ===
     class DataAnlyticsInput(BaseModel):
         is_data_analytics: bool
         reasoning: str
 
     guardrail_agent = Agent(
         name = "Guardrail Check",
-        instructions = "Check if the user is asking about data analytics.",
+        model = "o3-mini",
+        instructions="Determine whether the user's query is exclusively related to data analytics.",
         output_type= DataAnlyticsInput
     )
 
@@ -212,12 +213,14 @@ async def guardrail(request):
         result = await Runner.run(guardrail_agent, input, context=ctx.context)
         return GuardrailFunctionOutput(
             output_info=result.final_output, 
-            tripwire_triggered=result.final_output.is_data_analytics,
+            tripwire_triggered=not result.final_output.is_data_analytics,
         )
     
+    # === agents ====
     # 1st agent
     agent_tech = Agent(
         name="Tech Lead",
+        model = "gpt-4o",
         handoff_description="Specialized agent for solve technical questions",
         instructions="You provide assistance with technical queries. Explain step by step in detailed. You seach online web for references.",
         tools=[WebSearchTool()], 
@@ -226,6 +229,7 @@ async def guardrail(request):
     # 2nd agent
     agent_data_science = Agent(
         name = "Data Science",
+        model = "o3-mini",
         handoff_description= "Specialist agent for data science instrucitons",
         instructions="Use the python_execution tool for visualizations. Explain code step-by-step and include generated images.",
         tools=[data_visualization_tool],
@@ -234,19 +238,22 @@ async def guardrail(request):
     # triage agent
     triage_agent = Agent(
         name = "Triage Agent",
+        model = "o3-mini",
         instructions="Handoff to the appropriate agent based on the nature of the request",
         handoffs=[agent_tech, agent_data_science],
         input_guardrails=[data_analytics_guardrail],
     )
 
-    try:
-        result = Runner.run_streamed(triage_agent, input=data.get("message"))
-    except InputGuardrailTripwireTriggered:
-        return JsonResponse({"status":"error", "error_msg": "Guardrail tripped: Data analytics request detected"}, status=403)
-    
+    # stream response
+    result = Runner.run_streamed(triage_agent, input=data.get("message"))
     async def event_stream():
-        async for event in result.stream_events():
-            if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
-                yield event.data.delta.encode('utf-8') 
+        try:
+            async for event in result.stream_events():
+                if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+                    yield event.data.delta.encode('utf-8')
+        except InputGuardrailTripwireTriggered:
+            error_data = {"status": "error", "error_msg":"Request blocked: Outside system safety guidelines"}
+            yield f"ERROR_START{json.dumps(error_data)}ERROR_END".encode('utf-8')
+            return 
 
     return StreamingHttpResponse(event_stream(), content_type="text/plain")
