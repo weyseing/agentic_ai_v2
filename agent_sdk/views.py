@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import json
 import queue
 import base64
@@ -17,7 +18,7 @@ from django.http import StreamingHttpResponse
 from django.core.management import call_command
 from django.views.decorators.csrf import csrf_exempt
 from openai.types.responses import ResponseTextDeltaEvent
-from agents import Agent, GuardrailFunctionOutput, Runner, WebSearchTool, function_tool, InputGuardrailTripwireTriggered, OutputGuardrailTripwireTriggered, RunContextWrapper, TResponseInputItem, input_guardrail, output_guardrail
+from agents import Agent, GuardrailFunctionOutput, Runner, WebSearchTool, function_tool, InputGuardrailTripwireTriggered, OutputGuardrailTripwireTriggered, RunContextWrapper, TResponseInputItem, input_guardrail, output_guardrail, RunConfig
 from django.http import HttpResponse, StreamingHttpResponse, JsonResponse
 
 # logging
@@ -251,7 +252,10 @@ async def guardrail(request):
         name = "Data Science",
         model = "o3-mini",
         handoff_description= "Specialist agent for data science instrucitons",
-        instructions="Use tool for visualizations. Include code in proper code block if need. Display generated images.",
+        instructions="Use tool for generate visualizations. "
+                    "Do not include text in chart image. "
+                    "Include code in proper code block if need. "
+                    "Display generated images. ",
         tools=[data_visualization_tool],
         output_guardrails=[chart_guardrail],
     )
@@ -265,8 +269,14 @@ async def guardrail(request):
         input_guardrails=[data_analytics_guardrail],
     )
 
+    # run config
+    run_config = RunConfig(
+        trace_id="trace_" + str(int(time.time())),
+    )
+
     # stream response
-    result = Runner.run_streamed(triage_agent, input=data.get("message"))
+    result = Runner.run_streamed(triage_agent, input=data.get("message"),
+        run_config=run_config)
     async def event_stream():
         try:
             async for event in result.stream_events():
