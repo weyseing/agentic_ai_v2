@@ -253,7 +253,7 @@ async def guardrail(request):
         model = "o3-mini",
         handoff_description= "Specialist agent for data science instrucitons",
         instructions="Use tool for generate visualizations. "
-                    "Do not include text in chart image. "
+                    "Do not include text in generated chart image. "
                     "Include code in proper code block if need. "
                     "Display generated images. ",
         tools=[data_visualization_tool],
@@ -270,8 +270,11 @@ async def guardrail(request):
     )
 
     # run config
+    trace_id = "trace_" + str(int(time.time()))
+    workflow_name = "Apex-POC"
     run_config = RunConfig(
-        trace_id="trace_" + str(int(time.time())),
+        workflow_name = workflow_name,
+        trace_id = trace_id,
     )
 
     # stream response
@@ -279,16 +282,23 @@ async def guardrail(request):
         run_config=run_config)
     async def event_stream():
         try:
+            # stream response
             async for event in result.stream_events():
                 if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
                     yield event.data.delta.encode('utf-8')
+
+            # trace msg
+            trace_msg = {"trace_id":trace_id, "workflow_name":workflow_name}
+            yield f"TRACE_START{json.dumps(trace_msg)}TRACE_END".encode('utf-8')
+        # input guardarail
         except InputGuardrailTripwireTriggered:
             error_data = {"status": "error", "error_msg":"Input Guardrail: Outside system safety guidelines"}
             yield f"ERROR_START{json.dumps(error_data)}ERROR_END".encode('utf-8')
             return 
+        # output guardarail
         except OutputGuardrailTripwireTriggered:
             error_data = {"status": "error", "error_msg":"Output Guardrail: Outside system safety guidelines"}
             yield f"ERROR_START{json.dumps(error_data)}ERROR_END".encode('utf-8')
-            return 
+            return
 
     return StreamingHttpResponse(event_stream(), content_type="text/plain")

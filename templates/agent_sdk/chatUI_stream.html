@@ -185,7 +185,7 @@
             // looping stream
             while (true) {
                 const { done, value } = await reader.read();
-                const chunk = decoder.decode(value, { stream: true });
+                let chunk = decoder.decode(value, { stream: true });
                 if (done) break; 
 
                 // error handling
@@ -194,6 +194,13 @@
                     json_response = JSON.parse(json_response);
                     document.getElementById("output").innerHTML = json_response.error_msg;
                     return;
+                }
+
+                // trace handling               
+                if (chunk.includes("TRACE_START") && chunk.includes("TRACE_END")) {
+                    let json_response = chunk.split("TRACE_START")[1].split("TRACE_END")[0];
+                    chunk = chunk.split("TRACE_START")[0];
+                    console.log("TRACE: ", JSON.parse(json_response));
                 }
 
                 // append response
