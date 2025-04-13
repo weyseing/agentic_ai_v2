@@ -17,7 +17,7 @@ from django.http import StreamingHttpResponse
 from django.core.management import call_command
 from django.views.decorators.csrf import csrf_exempt
 from openai.types.responses import ResponseTextDeltaEvent
-from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner, WebSearchTool, function_tool, InputGuardrailTripwireTriggered, RunContextWrapper, TResponseInputItem, input_guardrail, output_guardrail
+from agents import Agent, GuardrailFunctionOutput, Runner, WebSearchTool, function_tool, InputGuardrailTripwireTriggered, OutputGuardrailTripwireTriggered, RunContextWrapper, TResponseInputItem, input_guardrail, output_guardrail
 from django.http import HttpResponse, StreamingHttpResponse, JsonResponse
 
 # logging
@@ -201,7 +201,7 @@ async def guardrail(request):
         is_data_analytics: bool
         reasoning: str
 
-    guardrail_agent = Agent(
+    agentGR_analytics = Agent(
         name = "Guardrail Check",
         model = "o3-mini",
         instructions="Determine whether the user's query is exclusively related to data analytics.",
@@ -210,13 +210,33 @@ async def guardrail(request):
 
     @input_guardrail
     async def data_analytics_guardrail(ctx: RunContextWrapper[None], agent: Agent, input: str | list[TResponseInputItem]) -> GuardrailFunctionOutput:
-        result = await Runner.run(guardrail_agent, input, context=ctx.context)
+        result = await Runner.run(agentGR_analytics, input, context=ctx.context)
         return GuardrailFunctionOutput(
             output_info=result.final_output, 
             tripwire_triggered=not result.final_output.is_data_analytics,
         )
     
-    # === agents ====
+    # === output guardrail ===
+    class ChartOutput(BaseModel): 
+        reasoning: str
+        is_chart: bool
+    
+    agentGR_chart = Agent(
+        name="Guardrail check",
+        model = "o3-mini",
+        instructions="Check if the output has at least one line chart.",
+        output_type=ChartOutput,
+    )
+
+    @output_guardrail
+    async def chart_guardrail(ctx: RunContextWrapper, agent: Agent, output: str) -> GuardrailFunctionOutput:
+        result = await Runner.run(agentGR_chart, output, context=ctx.context)
+        return GuardrailFunctionOutput(
+            output_info=result.final_output,
+            tripwire_triggered=not result.final_output.is_chart,
+        )
+        
+    # === agents flow ====
     # 1st agent
     agent_tech = Agent(
         name="Tech Lead",
@@ -231,8 +251,9 @@ async def guardrail(request):
         name = "Data Science",
         model = "o3-mini",
         handoff_description= "Specialist agent for data science instrucitons",
-        instructions="Use the python_execution tool for visualizations. Explain code step-by-step and include generated images.",
+        instructions="Use tool for visualizations. Include code in proper code block if need. Display generated images.",
         tools=[data_visualization_tool],
+        output_guardrails=[chart_guardrail],
     )
 
     # triage agent
@@ -252,7 +273,11 @@ async def guardrail(request):
                 if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
                     yield event.data.delta.encode('utf-8')
         except InputGuardrailTripwireTriggered:
-            error_data = {"status": "error", "error_msg":"Request blocked: Outside system safety guidelines"}
+            error_data = {"status": "error", "error_msg":"Input Guardrail: Outside system safety guidelines"}
+            yield f"ERROR_START{json.dumps(error_data)}ERROR_END".encode('utf-8')
+            return 
+        except OutputGuardrailTripwireTriggered:
+            error_data = {"status": "error", "error_msg":"Output Guardrail: Outside system safety guidelines"}
             yield f"ERROR_START{json.dumps(error_data)}ERROR_END".encode('utf-8')
             return 
 
